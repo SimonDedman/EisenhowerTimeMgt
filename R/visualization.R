@@ -10,6 +10,7 @@
 library(ggplot2)
 library(dplyr)
 library(scales)
+library(ggrepel)
 
 #' Combine Google Calendar and Trello data
 #' 
@@ -148,12 +149,20 @@ create_eisenhower_plot <- function(data,
                alpha = alpha_level,
                stroke = 0.5) +
     
-    # Add text labels for tasks (only for high importance/urgency to avoid clutter)
-    geom_text(data = filter(data, urgency_final >= 6 | importance_final >= 6),
-              aes(label = stringr::str_wrap(task_title, 20)), 
-              size = 2.5, 
-              vjust = -0.5, 
-              check_overlap = TRUE) +
+    # Add text labels for tasks with smart positioning to avoid overlap
+    geom_text_repel(aes(label = ifelse(nchar(task_title) > 30, 
+                                       paste0(substr(task_title, 1, 27), "..."),
+                                       task_title)), 
+                    size = 2.5, 
+                    max.overlaps = Inf,
+                    box.padding = 0.35,
+                    point.padding = 0.25,
+                    segment.color = "gray50",
+                    segment.size = 0.25,
+                    min.segment.length = 0.1,
+                    force = 1.5,
+                    max.iter = 4000,
+                    seed = 42) +
     
     # Styling
     scale_size_continuous(name = "Duration\n(hours)", 

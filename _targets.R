@@ -22,7 +22,7 @@ tar_option_set(
   packages = c(
     "googledrive", "googlesheets4", "trelloR", 
     "ggplot2", "dplyr", "tidyr", "lubridate", "stringr", 
-    "rmarkdown", "httr", "jsonlite"
+    "rmarkdown", "httr", "jsonlite", "ggrepel"
   ),
   format = "rds",
   repository = "local"
