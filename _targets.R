@@ -4,16 +4,18 @@
 library(targets)
 library(tarchetypes)
 
-# Source all R functions
-source("R/google_calendar.R")
+# Source core R functions
+source("R/google_calendar_service_account.R")  # Primary Google Calendar method
+source("R/trello_data_fixed.R")                # Primary Trello method
+source("R/visualization.R")                    # Plotting and data combination
+
+# Source fallback methods
+source("R/fallback_methods/google_calendar.R")
 source("R/google_calendar_simple.R")
-source("R/google_calendar_real.R")
-source("R/google_calendar_alternative.R")
+source("R/fallback_methods/google_calendar_real.R")
+source("R/fallback_methods/google_calendar_alternative.R")
 source("R/google_calendar_fixed.R")
-source("R/google_calendar_service_account.R")
-source("R/trello_data.R") 
-source("R/trello_data_fixed.R")
-source("R/visualization.R")
+source("R/fallback_methods/trello_data.R")
 
 # Set target options
 tar_option_set(
