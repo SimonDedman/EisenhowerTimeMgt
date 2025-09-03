@@ -7,6 +7,7 @@ library(tarchetypes)
 # Source all R functions
 source("R/google_calendar.R")
 source("R/google_calendar_simple.R")
+source("R/google_calendar_real.R")
 source("R/trello_data.R") 
 source("R/visualization.R")
 
@@ -28,9 +29,13 @@ list(
   tar_target(
     calendar_config,
     list(
-      calendar_id = "primary",
+      calendar_ids = c(
+        "soglpfav6p301t36cj9aqpe79s@group.calendar.google.com", # Admin calendar
+        "oa9mb0k12rkfsdsm9752bsahsc@group.calendar.google.com"  # Marine calendar
+      ),
       days_back = 30,
-      days_forward = 7
+      days_forward = 7,
+      subcalendar_filter = c("Admin", "admin", "Marine", "marine", "management", "planning", "review", "research")
     )
   ),
   
@@ -46,16 +51,23 @@ list(
   tar_target(
     google_calendar_data,
     {
-      # Use simple version for now (with mock data)
+      # Use REAL Google Calendar data from Admin and Marine calendars
       tryCatch({
-        extract_google_calendar_data_simple(
-          calendar_id = calendar_config$calendar_id,
+        extract_real_google_calendar_data(
+          calendar_ids = calendar_config$calendar_ids,
           days_back = calendar_config$days_back,
-          days_forward = calendar_config$days_forward
+          days_forward = calendar_config$days_forward,
+          subcalendar_filter = calendar_config$subcalendar_filter
         )
       }, error = function(e) {
         message("Google Calendar extraction failed: ", e$message)
-        data.frame() # Return empty data frame on error
+        message("Falling back to mock data...")
+        # Fallback to mock data if real calendar fails
+        extract_google_calendar_data_simple(
+          calendar_id = "primary",
+          days_back = calendar_config$days_back,
+          days_forward = calendar_config$days_forward
+        )
       })
     },
     # Re-run every 6 hours

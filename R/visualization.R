@@ -25,7 +25,7 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
     cal_processed <- calendar_data %>%
       filter(has_metadata) %>%
       mutate(
-        source = "Google Calendar",
+        source = ifelse("calendar_name" %in% colnames(calendar_data), calendar_name, "Google Calendar"),
         task_title = summary,
         urgency_final = urgency,
         importance_final = importance,
@@ -33,7 +33,8 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         duration_final = ifelse(!is.na(duration_tagged), duration_tagged, duration_calc),
         due_date_final = end_time,
         status = "Scheduled",
-        project_context = "Admin Calendar"
+        project_context = ifelse("calendar_name" %in% colnames(calendar_data), 
+                               paste(calendar_name, "Calendar"), "Calendar")
       ) %>%
       select(source, task_title, urgency_final, importance_final, enjoyment_final, 
              duration_final, due_date_final, status, project_context, description)
@@ -168,8 +169,8 @@ create_eisenhower_plot <- function(data,
                          breaks = c(0, 2.5, 5, 7.5, 10),
                          labels = c("0", "2.5", "5", "7.5", "10")) +
     
-    scale_shape_manual(name = "Source",
-                      values = c("Google Calendar" = 16, "Trello" = 17)) +
+    scale_shape_manual(name = "Data Source",
+                      values = c("Google Calendar" = 16, "Trello" = 17, "Admin" = 15, "Marine" = 18)) +
     
     # Scales and labels
     scale_x_continuous(name = "Urgency →", 
