@@ -34,8 +34,12 @@ setup_trello_auth <- function() {
     stop("Missing Trello credentials")
   }
   
-  # Set up trelloR authentication
-  trelloR::set_trello_creds(key = api_key, token = token)
+  # Set up trelloR authentication (updated function name)
+  # Store credentials as options for trelloR to use
+  options(
+    trello.key = api_key,
+    trello.token = token
+  )
   
   message("Trello authentication setup complete")
   return(TRUE)
@@ -47,7 +51,7 @@ setup_trello_auth <- function() {
 get_trello_boards <- function() {
   setup_trello_auth()
   
-  boards <- trelloR::get_boards(member = "me")
+  boards <- trelloR::get_my_boards()
   
   boards_df <- data.frame(
     board_id = boards$id,

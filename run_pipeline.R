@@ -1,5 +1,5 @@
 # run_pipeline.R - Main script to execute the time management pipeline
-# 
+#
 # This script runs the complete pipeline to extract data from Google Calendar
 # and Trello, create visualizations, and generate reports.
 
@@ -32,7 +32,7 @@ if (file.exists("reports/eisenhower_matrix.png")) {
 }
 
 if (file.exists("reports/task_timeline.png")) {
-  cat("✓ Timeline plot: reports/task_timeline.png\n") 
+  cat("✓ Timeline plot: reports/task_timeline.png\n")
 }
 
 if (file.exists("data/combined_tasks.csv")) {
@@ -50,11 +50,13 @@ cat("2. Or push to GitHub and enable GitHub Pages to view online\n")
 # Load and print quick summary
 if (tar_exist_objects("combined_task_data")) {
   tar_load(combined_task_data)
-  
+
   if (nrow(combined_task_data) > 0) {
-    cat(paste("\n📊 Found", nrow(combined_task_data), "tasks from", 
-              length(unique(combined_task_data$source)), "data source(s)\n"))
-    
+    cat(paste(
+      "\n📊 Found", nrow(combined_task_data), "tasks from",
+      length(unique(combined_task_data$source)), "data source(s)\n"
+    ))
+
     quadrant_counts <- table(combined_task_data$quadrant)
     cat("Quadrant distribution:\n")
     for (i in 1:length(quadrant_counts)) {

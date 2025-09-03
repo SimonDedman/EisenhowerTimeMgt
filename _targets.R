@@ -6,6 +6,7 @@ library(tarchetypes)
 
 # Source all R functions
 source("R/google_calendar.R")
+source("R/google_calendar_simple.R")
 source("R/trello_data.R") 
 source("R/visualization.R")
 
@@ -45,10 +46,9 @@ list(
   tar_target(
     google_calendar_data,
     {
-      # Set up authentication
+      # Use simple version for now (with mock data)
       tryCatch({
-        setup_google_auth()
-        extract_google_calendar_data(
+        extract_google_calendar_data_simple(
           calendar_id = calendar_config$calendar_id,
           days_back = calendar_config$days_back,
           days_forward = calendar_config$days_forward
@@ -59,7 +59,7 @@ list(
       })
     },
     # Re-run every 6 hours
-    cue = tar_cue(mode = "thorough", age = as.difftime(6, units = "hours"))
+    cue = tar_cue(mode = "thorough")
   ),
   
   tar_target(
@@ -76,7 +76,7 @@ list(
       })
     },
     # Re-run every 6 hours  
-    cue = tar_cue(mode = "thorough", age = as.difftime(6, units = "hours"))
+    cue = tar_cue(mode = "thorough")
   ),
   
   # Data processing target
