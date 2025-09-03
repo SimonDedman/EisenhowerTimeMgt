@@ -66,24 +66,70 @@ renv::restore()
 
 ### 2. Google Calendar Setup
 
+**⚠️ IMPORTANT: Google Calendar API requires additional setup. Choose your preferred method:**
+
+#### Method 1: Google Calendar API (Recommended)
+
 1. **Enable Google Calendar API**:
    - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project or select existing one
-   - Enable the Google Calendar API
-   - Create credentials (OAuth 2.0 client ID)
-   - Download credentials JSON file
+   - Create a new project or select existing one  
+   - Go to "APIs & Services" > "Library"
+   - Search and enable "Google Calendar API"
+   - Go to "Credentials" > "Create Credentials" > "API Key"
+   - Copy your API key
 
-2. **Authentication**:
+2. **Set API Key**:
    ```r
-   # First run will prompt for browser authentication
-   source("R/google_calendar.R")
-   setup_google_auth()
+   # Option A: Set for current session
+   Sys.setenv(GOOGLE_API_KEY = "your_api_key_here")
+   
+   # Option B: Add to .Renviron file permanently
+   GOOGLE_API_KEY=your_api_key_here
+   
+   # Option C: Use setup helper
+   source("setup_google_api.R") 
+   setup_google_api_key("your_api_key_here")
    ```
 
-3. **Calendar Configuration**:
-   - By default, extracts from your primary calendar
-   - Looks for events with Admin-related keywords or metadata tags
-   - Modify `calendar_config` in `_targets.R` to customize
+3. **Test Setup**:
+   ```r
+   source("test_calendar_with_api_key.R")  # Tests both Admin and Marine calendars
+   ```
+
+#### Method 2: CSV Export (Easy Alternative)
+
+1. **Export Calendars**:
+   - Go to Google Calendar settings for each calendar
+   - Select "Export calendar" and download .ics files
+   - Convert to CSV format (online tools available)
+   - Save as `data/admin_calendar.csv` and `data/marine_calendar.csv`
+
+2. **Use CSV Method**:
+   ```r
+   source("R/google_calendar_alternative.R")
+   csv_import_method()  # Shows detailed instructions
+   extract_from_csv_files()  # Processes your CSV files
+   ```
+
+#### Method 3: Manual Entry (Quick Start)
+
+1. **Create Template**:
+   ```r
+   source("R/google_calendar_alternative.R")
+   create_manual_data_template()  # Creates data/manual_calendar_data.csv
+   ```
+
+2. **Edit Template**: Add your events with `#U7I8E6D2h` tags
+
+3. **Process Template**:
+   ```r
+   extract_from_manual_template()  # Uses your manual data
+   ```
+
+#### Calendar Configuration
+- **Admin Calendar**: `soglpfav6p301t36cj9aqpe79s@group.calendar.google.com`
+- **Marine Calendar**: `oa9mb0k12rkfsdsm9752bsahsc@group.calendar.google.com`
+- **Auto-fallback**: API → CSV → Manual → Mock data
 
 ### 3. Trello Setup (Optional)
 

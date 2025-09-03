@@ -8,6 +8,7 @@ library(tarchetypes)
 source("R/google_calendar.R")
 source("R/google_calendar_simple.R")
 source("R/google_calendar_real.R")
+source("R/google_calendar_alternative.R")
 source("R/trello_data.R") 
 source("R/visualization.R")
 
@@ -60,14 +61,29 @@ list(
           subcalendar_filter = calendar_config$subcalendar_filter
         )
       }, error = function(e) {
-        message("Google Calendar extraction failed: ", e$message)
-        message("Falling back to mock data...")
-        # Fallback to mock data if real calendar fails
-        extract_google_calendar_data_simple(
-          calendar_id = "primary",
-          days_back = calendar_config$days_back,
-          days_forward = calendar_config$days_forward
-        )
+        message("Google Calendar API extraction failed: ", e$message)
+        
+        # Try CSV files first
+        tryCatch({
+          message("Trying CSV files...")
+          extract_from_csv_files()
+        }, error = function(e2) {
+          
+          # Try manual template
+          tryCatch({
+            message("Trying manual template...")
+            extract_from_manual_template()
+          }, error = function(e3) {
+            
+            message("All methods failed, falling back to mock data...")
+            # Final fallback to mock data
+            extract_google_calendar_data_simple(
+              calendar_id = "primary",
+              days_back = calendar_config$days_back,
+              days_forward = calendar_config$days_forward
+            )
+          })
+        })
       })
     },
     # Re-run every 6 hours

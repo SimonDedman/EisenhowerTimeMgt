@@ -45,7 +45,16 @@ get_real_calendar_events <- function(calendar_id = "primary",
       maxResults = 2500
     )
     
-    # Make the API call with proper token handling
+    # Get API key
+    api_key <- Sys.getenv("GOOGLE_API_KEY")
+    if (api_key == "") {
+      stop("Google API key not found. Run: source('setup_google_api.R') and follow setup instructions.")
+    }
+    
+    # Add API key to parameters
+    params$key <- api_key
+    
+    # Make the API call with both API key and OAuth token
     response <- httr::GET(
       url,
       query = params,
