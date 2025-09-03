@@ -35,9 +35,14 @@ list(
   tar_target(
     calendar_config,
     list(
-      calendar_ids = c(
-        "soglpfav6p301t36cj9aqpe79s@group.calendar.google.com", # Admin calendar
-        "oa9mb0k12rkfsdsm9752bsahsc@group.calendar.google.com"  # Marine calendar
+      # Separate calendars for Work and Home categorization
+      work_calendars = list(
+        id = "oa9mb0k12rkfsdsm9752bsahsc@group.calendar.google.com", # Marine calendar
+        name = "Marine"
+      ),
+      home_calendars = list(
+        id = "soglpfav6p301t36cj9aqpe79s@group.calendar.google.com", # Admin calendar  
+        name = "Admin"
       ),
       days_back = 30,
       days_forward = 7,
@@ -48,70 +53,46 @@ list(
   tar_target(
     trello_config, 
     list(
-      board_names = NULL, # NULL means all boards
+      # Specific boards for Work and Home categorization
+      work_boards = c("MarSci Projects"),
+      home_boards = c("Meg & Si Todo"), 
       include_closed = FALSE
     )
   ),
   
   # Data extraction targets
+  # Work calendar data (Marine)
   tar_target(
-    google_calendar_data,
+    work_calendar_data,
     {
+      calendar_ids <- calendar_config$work_calendars$id
       # Try SERVICE ACCOUNT extraction first (best for CLI)
       tryCatch({
-        extract_calendar_data_service_account(
-          calendar_ids = calendar_config$calendar_ids,
+        data <- extract_calendar_data_service_account(
+          calendar_ids = calendar_ids,
           days_back = calendar_config$days_back,
           days_forward = calendar_config$days_forward,
           subcalendar_filter = calendar_config$subcalendar_filter
         )
+        # Add category column
+        if(nrow(data) > 0) data$category <- "Work"
+        data
       }, error = function(e) {
         message("Service Account extraction failed: ", e$message)
         
         # Try FIXED Google Calendar extraction
         tryCatch({
-          extract_calendar_data_fixed(
-            calendar_ids = calendar_config$calendar_ids,
+          data <- extract_calendar_data_fixed(
+            calendar_ids = calendar_ids,
             days_back = calendar_config$days_back,
             days_forward = calendar_config$days_forward,
             subcalendar_filter = calendar_config$subcalendar_filter
           )
+          if(nrow(data) > 0) data$category <- "Work"
+          data
         }, error = function(e2) {
-          message("Fixed Google Calendar extraction failed: ", e2$message)
-          
-          # Try original real extraction
-          tryCatch({
-            extract_real_google_calendar_data(
-              calendar_ids = calendar_config$calendar_ids,
-              days_back = calendar_config$days_back,
-              days_forward = calendar_config$days_forward,
-              subcalendar_filter = calendar_config$subcalendar_filter
-            )
-          }, error = function(e3) {
-            message("Real Google Calendar API extraction failed: ", e3$message)
-            
-            # Try CSV files
-            tryCatch({
-              message("Trying CSV files...")
-              extract_from_csv_files()
-            }, error = function(e4) {
-              
-              # Try manual template
-              tryCatch({
-                message("Trying manual template...")
-                extract_from_manual_template()
-              }, error = function(e5) {
-                
-                message("All methods failed, falling back to mock data...")
-                # Final fallback to mock data
-                extract_google_calendar_data_simple(
-                  calendar_id = "primary",
-                  days_back = calendar_config$days_back,
-                  days_forward = calendar_config$days_forward
-                )
-              })
-            })
-          })
+          message("All calendar methods failed, returning empty data frame")
+          data.frame(category = character(0))
         })
       })
     },
@@ -119,39 +100,112 @@ list(
     cue = tar_cue(mode = "thorough")
   ),
   
+  # Home calendar data (Admin)
   tar_target(
-    trello_data,
+    home_calendar_data,
+    {
+      calendar_ids <- calendar_config$home_calendars$id
+      # Try SERVICE ACCOUNT extraction first (best for CLI)
+      tryCatch({
+        data <- extract_calendar_data_service_account(
+          calendar_ids = calendar_ids,
+          days_back = calendar_config$days_back,
+          days_forward = calendar_config$days_forward,
+          subcalendar_filter = calendar_config$subcalendar_filter
+        )
+        # Add category column
+        if(nrow(data) > 0) data$category <- "Home"
+        data
+      }, error = function(e) {
+        message("Service Account extraction failed: ", e$message)
+        
+        # Try FIXED Google Calendar extraction
+        tryCatch({
+          data <- extract_calendar_data_fixed(
+            calendar_ids = calendar_ids,
+            days_back = calendar_config$days_back,
+            days_forward = calendar_config$days_forward,
+            subcalendar_filter = calendar_config$subcalendar_filter
+          )
+          if(nrow(data) > 0) data$category <- "Home"
+          data
+        }, error = function(e2) {
+          message("All calendar methods failed, returning empty data frame")
+          data.frame(category = character(0))
+        })
+      })
+    },
+    # Re-run every 6 hours
+    cue = tar_cue(mode = "thorough")
+  ),
+  
+  # Work Trello data (MarSci Projects)
+  tar_target(
+    work_trello_data,
     {
       tryCatch({
         # Use FIXED Trello extraction with direct HTTP calls
-        extract_trello_data_fixed(
-          board_names = trello_config$board_names,
+        data <- extract_trello_data_fixed(
+          board_names = trello_config$work_boards,
           include_closed = trello_config$include_closed
         )
+        # Add category column
+        if(nrow(data) > 0) data$category <- "Work"
+        data
       }, error = function(e) {
-        message("Fixed Trello extraction failed, trying original: ", e$message)
-        tryCatch({
-          extract_trello_data(
-            board_names = trello_config$board_names,
-            include_closed = trello_config$include_closed
-          )
-        }, error = function(e2) {
-          message("All Trello methods failed: ", e2$message)
-          data.frame() # Return empty data frame on error
-        })
+        message("Fixed Trello extraction failed for work boards: ", e$message)
+        data.frame(category = character(0)) # Return empty data frame on error
       })
     },
     # Re-run every 6 hours  
     cue = tar_cue(mode = "thorough")
   ),
   
-  # Data processing target
+  # Home Trello data (Meg & Si Todo)
+  tar_target(
+    home_trello_data,
+    {
+      tryCatch({
+        # Use FIXED Trello extraction with direct HTTP calls
+        data <- extract_trello_data_fixed(
+          board_names = trello_config$home_boards,
+          include_closed = trello_config$include_closed
+        )
+        # Add category column
+        if(nrow(data) > 0) data$category <- "Home"
+        data
+      }, error = function(e) {
+        message("Fixed Trello extraction failed for home boards: ", e$message)
+        data.frame(category = character(0)) # Return empty data frame on error
+      })
+    },
+    # Re-run every 6 hours  
+    cue = tar_cue(mode = "thorough")
+  ),
+  
+  # Data processing targets
+  # Work data combination
+  tar_target(
+    work_task_data,
+    combine_task_data(
+      calendar_data = work_calendar_data,
+      trello_data = work_trello_data
+    )
+  ),
+  
+  # Home data combination  
+  tar_target(
+    home_task_data,
+    combine_task_data(
+      calendar_data = home_calendar_data,
+      trello_data = home_trello_data
+    )
+  ),
+  
+  # Combined data for overall view
   tar_target(
     combined_task_data,
-    combine_task_data(
-      calendar_data = google_calendar_data,
-      trello_data = trello_data
-    )
+    combine_work_home_data(work_task_data, home_task_data)
   ),
   
   # Analysis targets
@@ -161,17 +215,58 @@ list(
   ),
   
   # Visualization targets
+  # Work Eisenhower Matrix
   tar_target(
-    eisenhower_plot,
+    work_eisenhower_plot,
     {
       plot <- create_eisenhower_plot(
-        combined_task_data,
-        title = "Eisenhower Matrix - Personal Time Management"
+        work_task_data,
+        title = "Work Eisenhower Matrix - Marine Calendar & MarSci Projects"
       )
       
       # Save plot
       ggsave(
-        filename = "reports/eisenhower_matrix.png",
+        filename = "reports/eisenhower_matrix_work.png",
+        plot = plot,
+        width = 12, height = 8, dpi = 300, bg = "white"
+      )
+      
+      plot
+    }
+  ),
+  
+  # Home Eisenhower Matrix
+  tar_target(
+    home_eisenhower_plot,
+    {
+      plot <- create_eisenhower_plot(
+        home_task_data,
+        title = "Home Eisenhower Matrix - Admin Calendar & Meg & Si Todo"
+      )
+      
+      # Save plot
+      ggsave(
+        filename = "reports/eisenhower_matrix_home.png",
+        plot = plot,
+        width = 12, height = 8, dpi = 300, bg = "white"
+      )
+      
+      plot
+    }
+  ),
+  
+  # Combined Eisenhower Matrix
+  tar_target(
+    combined_eisenhower_plot,
+    {
+      plot <- create_eisenhower_plot(
+        combined_task_data,
+        title = "Combined Eisenhower Matrix - Personal Time Management"
+      )
+      
+      # Save plot
+      ggsave(
+        filename = "reports/eisenhower_matrix_combined.png",
         plot = plot,
         width = 12, height = 8, dpi = 300, bg = "white"
       )
@@ -260,8 +355,16 @@ list(
       }
       
       # Copy plots
-      if (file.exists("reports/eisenhower_matrix.png")) {
-        file.copy("reports/eisenhower_matrix.png", "docs/", overwrite = TRUE)
+      if (file.exists("reports/eisenhower_matrix_work.png")) {
+        file.copy("reports/eisenhower_matrix_work.png", "docs/", overwrite = TRUE)
+      }
+      
+      if (file.exists("reports/eisenhower_matrix_home.png")) {
+        file.copy("reports/eisenhower_matrix_home.png", "docs/", overwrite = TRUE)
+      }
+      
+      if (file.exists("reports/eisenhower_matrix_combined.png")) {
+        file.copy("reports/eisenhower_matrix_combined.png", "docs/", overwrite = TRUE)
       }
       
       if (file.exists("reports/task_timeline.png")) {
@@ -276,7 +379,12 @@ list(
           "</head>\n<body>\n",
           "<h1>Personal Time Management Dashboard</h1>\n",
           "<p>Last updated: ", Sys.time(), "</p>\n",
-          "<img src='eisenhower_matrix.png' alt='Eisenhower Matrix' style='max-width: 100%;'>\n",
+          "<h2>Work Tasks (Marine Calendar & MarSci Projects)</h2>\n",
+          "<img src='eisenhower_matrix_work.png' alt='Work Eisenhower Matrix' style='max-width: 100%;'>\n",
+          "<h2>Home Tasks (Admin Calendar & Meg & Si Todo)</h2>\n",
+          "<img src='eisenhower_matrix_home.png' alt='Home Eisenhower Matrix' style='max-width: 100%;'>\n",
+          "<h2>Combined Overview</h2>\n",
+          "<img src='eisenhower_matrix_combined.png' alt='Combined Eisenhower Matrix' style='max-width: 100%;'>\n",
           "<img src='task_timeline.png' alt='Task Timeline' style='max-width: 100%;'>\n",
           "</body>\n</html>"
         )

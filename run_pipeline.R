@@ -27,8 +27,16 @@ if (file.exists("reports/eisenhower_report.html")) {
   cat("✓ HTML report generated: reports/eisenhower_report.html\n")
 }
 
-if (file.exists("reports/eisenhower_matrix.png")) {
-  cat("✓ Eisenhower matrix plot: reports/eisenhower_matrix.png\n")
+if (file.exists("reports/eisenhower_matrix_work.png")) {
+  cat("✓ Work Eisenhower matrix plot: reports/eisenhower_matrix_work.png\n")
+}
+
+if (file.exists("reports/eisenhower_matrix_home.png")) {
+  cat("✓ Home Eisenhower matrix plot: reports/eisenhower_matrix_home.png\n")
+}
+
+if (file.exists("reports/eisenhower_matrix_combined.png")) {
+  cat("✓ Combined Eisenhower matrix plot: reports/eisenhower_matrix_combined.png\n")
 }
 
 if (file.exists("reports/task_timeline.png")) {

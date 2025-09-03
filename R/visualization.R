@@ -35,10 +35,12 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         due_date_final = end_time,
         status = "Scheduled",
         project_context = ifelse("calendar_name" %in% colnames(calendar_data), 
-                               paste(calendar_name, "Calendar"), "Calendar")
+                               paste(calendar_name, "Calendar"), "Calendar"),
+        # Preserve category if it exists
+        category = ifelse("category" %in% colnames(calendar_data), category, NA)
       ) %>%
       select(source, task_title, urgency_final, importance_final, enjoyment_final, 
-             duration_final, due_date_final, status, project_context, description)
+             duration_final, due_date_final, status, project_context, description, category)
     
     combined_data[["calendar"]] <- cal_processed
   }
@@ -56,10 +58,12 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         duration_final = ifelse(!is.na(duration_tagged), duration_tagged, 2), # Default 2 hours
         due_date_final = due_date,
         status = ifelse("list_name" %in% colnames(trello_data) && !is.na(list_name), list_name, "Open"),
-        project_context = board_name
+        project_context = board_name,
+        # Preserve category if it exists
+        category = ifelse("category" %in% colnames(trello_data), category, NA)
       ) %>%
       select(source, task_title, urgency_final, importance_final, enjoyment_final, 
-             duration_final, due_date_final, status, project_context, description)
+             duration_final, due_date_final, status, project_context, description, category)
     
     combined_data[["trello"]] <- trello_processed
   }
@@ -106,6 +110,39 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
   return(result)
 }
 
+#' Combine work and home task data
+#' 
+#' @param work_data Work task data from work_task_data target
+#' @param home_data Home task data from home_task_data target
+#' @return Combined data frame with data_category column
+combine_work_home_data <- function(work_data, home_data) {
+  
+  # Add category to work data
+  if(nrow(work_data) > 0) {
+    work_data$data_category <- "Work"
+  } else {
+    work_data <- data.frame()
+  }
+  
+  # Add category to home data
+  if(nrow(home_data) > 0) {
+    home_data$data_category <- "Home"
+  } else {
+    home_data <- data.frame()
+  }
+  
+  # Combine the data
+  if(nrow(work_data) == 0 && nrow(home_data) == 0) {
+    return(data.frame())
+  } else if(nrow(work_data) == 0) {
+    return(home_data)
+  } else if(nrow(home_data) == 0) {
+    return(work_data)
+  } else {
+    return(rbind(work_data, home_data))
+  }
+}
+
 #' Create the main Eisenhower Matrix scatter plot
 #' 
 #' @param data Combined task data from combine_task_data()
@@ -142,10 +179,12 @@ create_eisenhower_plot <- function(data,
     geom_vline(xintercept = 5, linetype = "dashed", color = "gray50", linewidth = 0.5) +
     geom_hline(yintercept = 5, linetype = "dashed", color = "gray50", linewidth = 0.5) +
     
-    # Add points - sized by duration, colored by enjoyment
+    # Add points - sized by duration, colored by enjoyment, shaped by data category
     geom_point(aes(size = duration_final, 
                    color = enjoyment_final,
-                   shape = source),
+                   shape = ifelse("data_category" %in% colnames(data), 
+                                 data_category, 
+                                 ifelse("category" %in% colnames(data), category, source))),
                alpha = alpha_level,
                stroke = 0.5) +
     
@@ -178,8 +217,14 @@ create_eisenhower_plot <- function(data,
                          breaks = c(0, 2.5, 5, 7.5, 10),
                          labels = c("0", "2.5", "5", "7.5", "10")) +
     
-    scale_shape_manual(name = "Data Source",
-                      values = c("Google Calendar" = 16, "Trello" = 17, "Admin" = 15, "Marine" = 18)) +
+    scale_shape_manual(name = "Category",
+                      values = c("Work" = 15,  # Square for Work
+                                 "Home" = 16,  # Circle for Home
+                                 "Google Calendar" = 16, 
+                                 "Trello" = 17, 
+                                 "Admin" = 16,  # Circle for Admin (Home)
+                                 "Marine" = 15), # Square for Marine (Work)
+                      na.value = 16) +
     
     # Scales and labels
     scale_x_continuous(name = "Urgency →", 
