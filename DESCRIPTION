@@ -1,0 +1,29 @@
+Package: EisenhowerTimeMgt
+Type: Package
+Title: Automated Time Management with Eisenhower Matrix
+Version: 0.1.0
+Description: Automated pipeline to extract task data from Google Calendar and 
+    Trello, parse urgency/importance/enjoyment/duration metrics, and visualize 
+    using an Eisenhower matrix scatter plot. Uses targets for workflow management
+    and GitHub Pages for automated reporting.
+Authors@R: person("Simon", "", email = "your.email@example.com", role = c("aut", "cre"))
+License: MIT
+Encoding: UTF-8
+LazyData: true
+Imports:
+    targets,
+    tarchetypes,
+    googledrive,
+    googlesheets4,
+    trelloR,
+    ggplot2,
+    dplyr,
+    tidyr,
+    lubridate,
+    stringr,
+    rmarkdown,
+    httr,
+    jsonlite
+Suggests:
+    knitr
+VignetteBuilder: knitr
