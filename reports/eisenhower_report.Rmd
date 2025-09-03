@@ -152,7 +152,7 @@ The main visualization shows all tasks plotted on the classic Eisenhower Matrix:
 - **Delegate (Orange)**: Urgent but Not Important
 - **Eliminate (Gray)**: Neither Urgent nor Important
 
-```{r combined-matrix, results='asis'}
+```{r combined-matrix, results='asis', echo=FALSE}
 cat('<img src="eisenhower_matrix_combined.png" class="clickable-image" onclick="openImageModal(this.src, this.alt)" alt="Combined Eisenhower Matrix" style="max-width: 100%; cursor: pointer;" title="Click to enlarge">')
 ```
 
@@ -178,7 +178,7 @@ if (length(summary_statistics) > 0 && !is.null(summary_statistics$by_quadrant)) 
 
 This view shows tasks over time based on their due dates:
 
-```{r combined-timeline, results='asis'}
+```{r combined-timeline, results='asis', echo=FALSE}
 cat('<img src="task_timeline.png" class="clickable-image" onclick="openImageModal(this.src, this.alt)" alt="Task Timeline" style="max-width: 100%; cursor: pointer;" title="Click to enlarge">')
 ```
 
@@ -272,8 +272,8 @@ if (nrow(combined_task_data) > 0) {
 
 Work tasks from Marine Calendar & MarSci Projects board:
 
-```{r work-matrix, results='asis'}
-if (!is.null(work_eisenhower_plot)) {
+```{r work-matrix, results='asis', echo=FALSE}
+if (nrow(work_task_data) > 0) {
   cat('<img src="eisenhower_matrix_work.png" class="clickable-image" onclick="openImageModal(this.src, this.alt)" alt="Work Eisenhower Matrix" style="max-width: 100%; cursor: pointer;" title="Click to enlarge">')
 } else {
   cat("No work tasks available. Add tasks to Marine Calendar or MarSci Projects Trello board.")
@@ -306,8 +306,8 @@ if (nrow(work_task_data) > 0) {
 
 ## Work Timeline View
 
-```{r work-timeline, results='asis'}
-if (!is.null(work_timeline_plot)) {
+```{r work-timeline, results='asis', echo=FALSE}
+if (nrow(work_task_data) > 0) {
   cat('<img src="task_timeline_work.png" class="clickable-image" onclick="openImageModal(this.src, this.alt)" alt="Work Timeline" style="max-width: 100%; cursor: pointer;" title="Click to enlarge">')
 } else {
   cat("No work timeline available")
@@ -382,8 +382,8 @@ if (nrow(work_task_data) > 0) {
 
 Home tasks from Admin Calendar & Meg & Si Todo board:
 
-```{r home-matrix, results='asis'}
-if (!is.null(home_eisenhower_plot)) {
+```{r home-matrix, results='asis', echo=FALSE}
+if (nrow(home_task_data) > 0) {
   cat('<img src="eisenhower_matrix_home.png" class="clickable-image" onclick="openImageModal(this.src, this.alt)" alt="Home Eisenhower Matrix" style="max-width: 100%; cursor: pointer;" title="Click to enlarge">')
 } else {
   cat("No home tasks available.")
@@ -416,8 +416,8 @@ if (nrow(home_task_data) > 0) {
 
 ## Home Timeline View
 
-```{r home-timeline, results='asis'}
-if (!is.null(home_timeline_plot)) {
+```{r home-timeline, results='asis', echo=FALSE}
+if (nrow(home_task_data) > 0) {
   cat('<img src="task_timeline_home.png" class="clickable-image" onclick="openImageModal(this.src, this.alt)" alt="Home Timeline" style="max-width: 100%; cursor: pointer;" title="Click to enlarge">')
 } else {
   cat("No home timeline available")
