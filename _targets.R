@@ -91,8 +91,17 @@ list(
           if(nrow(data) > 0) data$category <- "Work"
           data
         }, error = function(e2) {
-          message("All calendar methods failed, returning empty data frame")
-          data.frame(category = character(0))
+          message("All calendar methods failed, trying manual template...")
+          tryCatch({
+            data <- extract_from_manual_template()
+            # Filter for work calendar (Marine)
+            work_data <- data[data$calendar_name == "Marine", ]
+            if(nrow(work_data) > 0) work_data$category <- "Work"
+            work_data
+          }, error = function(e3) {
+            message("Manual template also failed, returning empty data frame")
+            data.frame(category = character(0))
+          })
         })
       })
     },
@@ -130,8 +139,17 @@ list(
           if(nrow(data) > 0) data$category <- "Home"
           data
         }, error = function(e2) {
-          message("All calendar methods failed, returning empty data frame")
-          data.frame(category = character(0))
+          message("All calendar methods failed, trying manual template...")
+          tryCatch({
+            data <- extract_from_manual_template()
+            # Filter for home calendar (Admin)
+            home_data <- data[data$calendar_name == "Admin", ]
+            if(nrow(home_data) > 0) home_data$category <- "Home"
+            home_data
+          }, error = function(e3) {
+            message("Manual template also failed, returning empty data frame")
+            data.frame(category = character(0))
+          })
         })
       })
     },
@@ -154,7 +172,17 @@ list(
         data
       }, error = function(e) {
         message("Fixed Trello extraction failed for work boards: ", e$message)
-        data.frame(category = character(0)) # Return empty data frame on error
+        message("Trying manual Trello data...")
+        tryCatch({
+          data <- extract_manual_trello_data()
+          # Filter for work boards (MarSci Projects)
+          work_data <- data[data$board_name == "MarSci Projects", ]
+          if(nrow(work_data) > 0) work_data$category <- "Work"
+          work_data
+        }, error = function(e2) {
+          message("Manual Trello data also failed, returning empty data frame")
+          data.frame(category = character(0))
+        })
       })
     },
     # Re-run every 6 hours  
@@ -176,7 +204,17 @@ list(
         data
       }, error = function(e) {
         message("Fixed Trello extraction failed for home boards: ", e$message)
-        data.frame(category = character(0)) # Return empty data frame on error
+        message("Trying manual Trello data...")
+        tryCatch({
+          data <- extract_manual_trello_data()
+          # Filter for home boards (Meg & Si Todo)
+          home_data <- data[data$board_name == "Meg & Si Todo", ]
+          if(nrow(home_data) > 0) home_data$category <- "Home"
+          home_data
+        }, error = function(e2) {
+          message("Manual Trello data also failed, returning empty data frame")
+          data.frame(category = character(0))
+        })
       })
     },
     # Re-run every 6 hours  
