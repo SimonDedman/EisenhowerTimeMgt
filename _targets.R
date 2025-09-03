@@ -387,10 +387,8 @@ list(
       # Copy key files to docs/ for GitHub Pages
       if (!dir.exists("docs")) dir.create("docs")
       
-      # Copy HTML report
-      if (file.exists("reports/eisenhower_report.html")) {
-        file.copy("reports/eisenhower_report.html", "docs/index.html", overwrite = TRUE)
-      }
+      # Always create a simple index with cache busting instead of copying the full report
+      # The full report is accessible separately if needed
       
       # Copy plots
       if (file.exists("reports/eisenhower_matrix_work.png")) {
@@ -409,26 +407,30 @@ list(
         file.copy("reports/task_timeline.png", "docs/", overwrite = TRUE) 
       }
       
-      # Create a simple index if report doesn't exist
-      if (!file.exists("docs/index.html")) {
-        simple_html <- paste0(
-          "<!DOCTYPE html>\n<html>\n<head>\n",
-          "<title>Eisenhower Time Management Dashboard</title>\n",
-          "</head>\n<body>\n",
-          "<h1>Personal Time Management Dashboard</h1>\n",
-          "<p>Last updated: ", Sys.time(), "</p>\n",
-          "<h2>Work Tasks (Marine Calendar & MarSci Projects)</h2>\n",
-          "<img src='eisenhower_matrix_work.png' alt='Work Eisenhower Matrix' style='max-width: 100%;'>\n",
-          "<h2>Home Tasks (Admin Calendar & Meg & Si Todo)</h2>\n",
-          "<img src='eisenhower_matrix_home.png' alt='Home Eisenhower Matrix' style='max-width: 100%;'>\n",
-          "<h2>Combined Overview</h2>\n",
-          "<img src='eisenhower_matrix_combined.png' alt='Combined Eisenhower Matrix' style='max-width: 100%;'>\n",
-          "<img src='task_timeline.png' alt='Task Timeline' style='max-width: 100%;'>\n",
-          "</body>\n</html>"
-        )
-        
-        writeLines(simple_html, "docs/index.html")
-      }
+      # Always create a simple index with cache busting
+      # Add timestamp for cache busting
+      timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
+      simple_html <- paste0(
+        "<!DOCTYPE html>\n<html>\n<head>\n",
+        "<title>Eisenhower Time Management Dashboard</title>\n",
+        "<meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate'>\n",
+        "<meta http-equiv='Pragma' content='no-cache'>\n",
+        "<meta http-equiv='Expires' content='0'>\n",
+        "</head>\n<body>\n",
+        "<h1>Personal Time Management Dashboard</h1>\n",
+        "<p>Last updated: ", Sys.time(), "</p>\n",
+        "<h2>Work Tasks (Marine Calendar & MarSci Projects)</h2>\n",
+        "<img src='eisenhower_matrix_work.png?v=", timestamp, "' alt='Work Eisenhower Matrix' style='max-width: 100%;'>\n",
+        "<h2>Home Tasks (Admin Calendar & Meg & Si Todo)</h2>\n",
+        "<img src='eisenhower_matrix_home.png?v=", timestamp, "' alt='Home Eisenhower Matrix' style='max-width: 100%;'>\n",
+        "<h2>Combined Overview</h2>\n",
+        "<img src='eisenhower_matrix_combined.png?v=", timestamp, "' alt='Combined Eisenhower Matrix' style='max-width: 100%;'>\n",
+        "<img src='task_timeline.png?v=", timestamp, "' alt='Task Timeline' style='max-width: 100%;'>\n",
+        "<p><small>Full detailed report: <a href='eisenhower_report.html'>View HTML Report</a></small></p>\n",
+        "</body>\n</html>"
+      )
+      
+      writeLines(simple_html, "docs/index.html")
       
       "docs/index.html"
     }
