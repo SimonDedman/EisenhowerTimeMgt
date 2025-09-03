@@ -186,7 +186,8 @@ create_eisenhower_plot <- function(data,
                                  data_category, 
                                  ifelse("category" %in% colnames(data), category, source))),
                alpha = alpha_level,
-               stroke = 0.5) +
+               stroke = 0.5,
+               position = position_jitter(width = 0.15, height = 0.15, seed = 42)) +
     
     # Add text labels for tasks with smart positioning to avoid overlap
     geom_text_repel(aes(label = ifelse(nchar(task_title) > 30, 
@@ -201,7 +202,8 @@ create_eisenhower_plot <- function(data,
                     min.segment.length = 0.1,
                     force = 1.5,
                     max.iter = 4000,
-                    seed = 42) +
+                    seed = 42,
+                    position = position_jitter(width = 0.15, height = 0.15, seed = 42)) +
     
     # Styling
     scale_size_continuous(name = "Duration\n(hours)", 
