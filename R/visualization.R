@@ -54,7 +54,7 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         enjoyment_final = ifelse(!is.na(enjoyment), enjoyment, 5), # Default to neutral enjoyment
         duration_final = ifelse(!is.na(duration_tagged), duration_tagged, 2), # Default 2 hours
         due_date_final = due_date,
-        status = ifelse(!is.null(list_name), list_name, "Unknown"),
+        status = ifelse("list_name" %in% colnames(trello_data) && !is.na(list_name), list_name, "Open"),
         project_context = board_name
       ) %>%
       select(source, task_title, urgency_final, importance_final, enjoyment_final, 

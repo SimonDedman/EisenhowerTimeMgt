@@ -9,7 +9,10 @@ source("R/google_calendar.R")
 source("R/google_calendar_simple.R")
 source("R/google_calendar_real.R")
 source("R/google_calendar_alternative.R")
+source("R/google_calendar_fixed.R")
+source("R/google_calendar_service_account.R")
 source("R/trello_data.R") 
+source("R/trello_data_fixed.R")
 source("R/visualization.R")
 
 # Set target options
@@ -52,36 +55,60 @@ list(
   tar_target(
     google_calendar_data,
     {
-      # Use REAL Google Calendar data from Admin and Marine calendars
+      # Try SERVICE ACCOUNT extraction first (best for CLI)
       tryCatch({
-        extract_real_google_calendar_data(
+        extract_calendar_data_service_account(
           calendar_ids = calendar_config$calendar_ids,
           days_back = calendar_config$days_back,
           days_forward = calendar_config$days_forward,
           subcalendar_filter = calendar_config$subcalendar_filter
         )
       }, error = function(e) {
-        message("Google Calendar API extraction failed: ", e$message)
+        message("Service Account extraction failed: ", e$message)
         
-        # Try CSV files first
+        # Try FIXED Google Calendar extraction
         tryCatch({
-          message("Trying CSV files...")
-          extract_from_csv_files()
+          extract_calendar_data_fixed(
+            calendar_ids = calendar_config$calendar_ids,
+            days_back = calendar_config$days_back,
+            days_forward = calendar_config$days_forward,
+            subcalendar_filter = calendar_config$subcalendar_filter
+          )
         }, error = function(e2) {
+          message("Fixed Google Calendar extraction failed: ", e2$message)
           
-          # Try manual template
+          # Try original real extraction
           tryCatch({
-            message("Trying manual template...")
-            extract_from_manual_template()
-          }, error = function(e3) {
-            
-            message("All methods failed, falling back to mock data...")
-            # Final fallback to mock data
-            extract_google_calendar_data_simple(
-              calendar_id = "primary",
+            extract_real_google_calendar_data(
+              calendar_ids = calendar_config$calendar_ids,
               days_back = calendar_config$days_back,
-              days_forward = calendar_config$days_forward
+              days_forward = calendar_config$days_forward,
+              subcalendar_filter = calendar_config$subcalendar_filter
             )
+          }, error = function(e3) {
+            message("Real Google Calendar API extraction failed: ", e3$message)
+            
+            # Try CSV files
+            tryCatch({
+              message("Trying CSV files...")
+              extract_from_csv_files()
+            }, error = function(e4) {
+              
+              # Try manual template
+              tryCatch({
+                message("Trying manual template...")
+                extract_from_manual_template()
+              }, error = function(e5) {
+                
+                message("All methods failed, falling back to mock data...")
+                # Final fallback to mock data
+                extract_google_calendar_data_simple(
+                  calendar_id = "primary",
+                  days_back = calendar_config$days_back,
+                  days_forward = calendar_config$days_forward
+                )
+              })
+            })
           })
         })
       })
@@ -94,13 +121,22 @@ list(
     trello_data,
     {
       tryCatch({
-        extract_trello_data(
+        # Use FIXED Trello extraction with direct HTTP calls
+        extract_trello_data_fixed(
           board_names = trello_config$board_names,
           include_closed = trello_config$include_closed
         )
       }, error = function(e) {
-        message("Trello extraction failed: ", e$message)
-        data.frame() # Return empty data frame on error
+        message("Fixed Trello extraction failed, trying original: ", e$message)
+        tryCatch({
+          extract_trello_data(
+            board_names = trello_config$board_names,
+            include_closed = trello_config$include_closed
+          )
+        }, error = function(e2) {
+          message("All Trello methods failed: ", e2$message)
+          data.frame() # Return empty data frame on error
+        })
       })
     },
     # Re-run every 6 hours  
@@ -184,10 +220,29 @@ list(
   ),
   
   # Report generation target
-  tar_render(
+  tar_target(
     report,
-    "reports/eisenhower_report.Rmd",
-    output_file = "reports/eisenhower_report.html"
+    {
+      # Ensure reports directory exists
+      if (!dir.exists("reports")) dir.create("reports")
+      
+      # Save data objects for the report to use
+      saveRDS(combined_task_data, "reports/combined_task_data.rds")
+      saveRDS(summary_statistics, "reports/summary_statistics.rds")
+      
+      # Render the report with parameters
+      rmarkdown::render(
+        input = "reports/eisenhower_report.Rmd",
+        output_file = "eisenhower_report.html",
+        output_dir = "reports",
+        params = list(
+          data_file = "combined_task_data.rds",
+          stats_file = "summary_statistics.rds"
+        )
+      )
+      
+      "reports/eisenhower_report.html"
+    }
   ),
   
   # GitHub Pages deployment preparation

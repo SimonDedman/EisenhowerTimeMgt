@@ -22,17 +22,25 @@ knitr::opts_chunk$set(
 )
 
 # Load required libraries
-library(targets)
 library(ggplot2)
 library(dplyr)
 library(knitr)
 library(DT)
 
-# Load targets data
-tar_load(combined_task_data)
-tar_load(summary_statistics)
-tar_load(eisenhower_plot)
-tar_load(timeline_plot)
+# Load data from saved RDS files
+combined_task_data <- readRDS("combined_task_data.rds")
+summary_statistics <- readRDS("summary_statistics.rds")
+
+# Source visualization functions to recreate plots
+source("../R/visualization.R")
+
+# Recreate plots
+eisenhower_plot <- create_eisenhower_plot(
+  combined_task_data,
+  title = "Eisenhower Matrix - Personal Time Management"
+)
+
+timeline_plot <- create_timeline_plot(combined_task_data)
 ```
 
 # Executive Summary
