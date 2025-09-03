@@ -387,9 +387,6 @@ list(
       # Copy key files to docs/ for GitHub Pages
       if (!dir.exists("docs")) dir.create("docs")
       
-      # Always create a simple index with cache busting instead of copying the full report
-      # The full report is accessible separately if needed
-      
       # Copy plots
       if (file.exists("reports/eisenhower_matrix_work.png")) {
         file.copy("reports/eisenhower_matrix_work.png", "docs/", overwrite = TRUE)
@@ -407,30 +404,31 @@ list(
         file.copy("reports/task_timeline.png", "docs/", overwrite = TRUE) 
       }
       
-      # Always create a simple index with cache busting
-      # Add timestamp for cache busting
-      timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
-      simple_html <- paste0(
-        "<!DOCTYPE html>\n<html>\n<head>\n",
-        "<title>Eisenhower Time Management Dashboard</title>\n",
-        "<meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate'>\n",
-        "<meta http-equiv='Pragma' content='no-cache'>\n",
-        "<meta http-equiv='Expires' content='0'>\n",
-        "</head>\n<body>\n",
-        "<h1>Personal Time Management Dashboard</h1>\n",
-        "<p>Last updated: ", Sys.time(), "</p>\n",
-        "<h2>Work Tasks (Marine Calendar & MarSci Projects)</h2>\n",
-        "<img src='eisenhower_matrix_work.png?v=", timestamp, "' alt='Work Eisenhower Matrix' style='max-width: 100%;'>\n",
-        "<h2>Home Tasks (Admin Calendar & Meg & Si Todo)</h2>\n",
-        "<img src='eisenhower_matrix_home.png?v=", timestamp, "' alt='Home Eisenhower Matrix' style='max-width: 100%;'>\n",
-        "<h2>Combined Overview</h2>\n",
-        "<img src='eisenhower_matrix_combined.png?v=", timestamp, "' alt='Combined Eisenhower Matrix' style='max-width: 100%;'>\n",
-        "<img src='task_timeline.png?v=", timestamp, "' alt='Task Timeline' style='max-width: 100%;'>\n",
-        "<p><small>Full detailed report: <a href='eisenhower_report.html'>View HTML Report</a></small></p>\n",
-        "</body>\n</html>"
-      )
-      
-      writeLines(simple_html, "docs/index.html")
+      # Copy the full HTML report and add cache-busting
+      if (file.exists("reports/eisenhower_report.html")) {
+        # Read the report HTML
+        report_html <- readLines("reports/eisenhower_report.html")
+        
+        # Add cache-busting timestamp to image references
+        timestamp <- format(Sys.time(), "%Y%m%d%H%M%S")
+        
+        # Replace image src attributes with cache-busting versions
+        report_html <- gsub('src="eisenhower_matrix_work.png"', 
+                           paste0('src="eisenhower_matrix_work.png?v=', timestamp, '"'), 
+                           report_html)
+        report_html <- gsub('src="eisenhower_matrix_home.png"', 
+                           paste0('src="eisenhower_matrix_home.png?v=', timestamp, '"'), 
+                           report_html)
+        report_html <- gsub('src="eisenhower_matrix_combined.png"', 
+                           paste0('src="eisenhower_matrix_combined.png?v=', timestamp, '"'), 
+                           report_html)
+        report_html <- gsub('src="task_timeline.png"', 
+                           paste0('src="task_timeline.png?v=', timestamp, '"'), 
+                           report_html)
+        
+        # Write the modified HTML
+        writeLines(report_html, "docs/index.html")
+      }
       
       "docs/index.html"
     }
