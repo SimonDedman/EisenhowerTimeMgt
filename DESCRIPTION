@@ -27,7 +27,8 @@ Imports:
     scales,
     ggrepel,
     openssl,
-    jose
+    jose,
+    readr
 Suggests:
     knitr
 VignetteBuilder: knitr
