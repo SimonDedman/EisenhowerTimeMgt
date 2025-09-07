@@ -116,6 +116,12 @@
       "Version": "2.1.5",
       "Source": "Repository",
       "Repository": "CRAN"
+    },
+    "DT": {
+      "Package": "DT",
+      "Version": "0.33",
+      "Source": "Repository",
+      "Repository": "CRAN"
     }
   }
 }

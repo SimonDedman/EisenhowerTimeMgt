@@ -28,7 +28,8 @@ Imports:
     ggrepel,
     openssl,
     jose,
-    readr
+    readr,
+    DT
 Suggests:
     knitr
 VignetteBuilder: knitr
