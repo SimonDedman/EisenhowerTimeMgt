@@ -334,6 +334,11 @@ list(
     export_csv,
     {
       if (nrow(combined_task_data) > 0) {
+        # Ensure data directory exists
+        if (!dir.exists("data")) {
+          dir.create("data", recursive = TRUE)
+        }
+        
         write.csv(
           combined_task_data, 
           file = "data/combined_tasks.csv", 
