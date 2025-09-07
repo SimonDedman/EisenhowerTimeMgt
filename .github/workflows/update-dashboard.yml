@@ -11,6 +11,8 @@ on:
 jobs:
   update-dashboard:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -62,13 +64,6 @@ jobs:
         targets::tar_make()
       shell: Rscript {0}
       
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
-        
     - name: Commit updated data
       run: |
         git config --local user.email "action@github.com"
