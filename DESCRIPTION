@@ -23,7 +23,11 @@ Imports:
     stringr,
     rmarkdown,
     httr,
-    jsonlite
+    jsonlite,
+    scales,
+    ggrepel,
+    openssl,
+    jose
 Suggests:
     knitr
 VignetteBuilder: knitr
