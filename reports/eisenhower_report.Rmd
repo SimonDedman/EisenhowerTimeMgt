@@ -353,61 +353,6 @@ if (nrow(work_task_data) > 0) {
 }
 ```
 
-## Work Tasks by List
-
-```{r work-by-list, results='asis'}
-if (nrow(work_task_data) > 0 && "list_name" %in% colnames(work_task_data)) {
-  
-  # Get unique lists in work data
-  work_lists <- work_task_data %>%
-    filter(!is.na(list_name)) %>%
-    group_by(list_name) %>%
-    summarise(count = n(), .groups = "drop") %>%
-    arrange(desc(count))
-  
-  if (nrow(work_lists) > 0) {
-    for (i in 1:nrow(work_lists)) {
-      list_name <- work_lists$list_name[i]
-      list_data <- work_task_data %>% filter(list_name == !!list_name)
-      
-      cat("### ", list_name, "\n\n")
-      
-      if (nrow(list_data) > 0) {
-        # List summary
-        list_summary <- list_data %>%
-          summarise(
-            Tasks = n(),
-            `Avg Urgency` = round(mean(urgency_final, na.rm = TRUE), 1),
-            `Avg Importance` = round(mean(importance_final, na.rm = TRUE), 1),
-            `Total Hours` = round(sum(duration_final, na.rm = TRUE), 1),
-            `Avg Enjoyment` = round(mean(enjoyment_final, na.rm = TRUE), 1)
-          )
-        
-        cat("**Summary:** ", list_summary$Tasks, " tasks, ", 
-            list_summary$`Total Hours`, " hours total\n\n")
-        
-        # Top tasks in this list
-        top_tasks <- list_data %>%
-          arrange(desc(urgency_final), desc(importance_final)) %>%
-          select(task_title, urgency_final, importance_final, quadrant) %>%
-          head(5)
-        
-        if (nrow(top_tasks) > 0) {
-          cat("**Top Priority Tasks:**\n\n")
-          for (j in 1:nrow(top_tasks)) {
-            cat("- ", top_tasks$task_title[j], " (", top_tasks$quadrant[j], ")\n")
-          }
-          cat("\n")
-        }
-      }
-    }
-  } else {
-    cat("No list information available for work tasks.\n")
-  }
-} else {
-  cat("No work list data available.\n")
-}
-```
 
 ## Work Recommendations
 
@@ -551,6 +496,25 @@ if (nrow(home_task_data) > 0 && "list_name" %in% colnames(home_task_data)) {
         
         cat("**Summary:** ", list_summary$Tasks, " tasks, ", 
             list_summary$`Total Hours`, " hours total\n\n")
+        
+        # Create individual Eisenhower matrix for this list
+        if (nrow(list_data) >= 2) {  # Only create plot if enough data points
+          list_plot <- create_eisenhower_plot(
+            list_data, 
+            title = paste("Home -", list_name, "Eisenhower Matrix"),
+            size_range = c(2, 8)
+          )
+          
+          # Save the plot
+          plot_filename <- paste0("eisenhower_matrix_home_", 
+                                 gsub("[^A-Za-z0-9]", "_", tolower(list_name)), ".png")
+          ggsave(plot_filename, list_plot, width = 10, height = 8, dpi = 300)
+          
+          # Display the plot
+          cat(paste0('<img src="', plot_filename, 
+                    '" class="clickable-image" onclick="openImageModal(this.src, this.alt)" alt="', 
+                    list_name, ' Eisenhower Matrix" style="max-width: 100%; cursor: pointer;" title="Click to enlarge">\n\n'))
+        }
         
         # Top tasks in this list
         top_tasks <- list_data %>%
