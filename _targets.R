@@ -409,6 +409,12 @@ list(
         file.copy("reports/task_timeline.png", "docs/", overwrite = TRUE) 
       }
       
+      # Copy individual home list plots
+      individual_plots <- list.files("reports", pattern = "eisenhower_matrix_home_.*\\.png$", full.names = TRUE)
+      for (plot_file in individual_plots) {
+        file.copy(plot_file, "docs/", overwrite = TRUE)
+      }
+      
       # Copy the full HTML report and add cache-busting
       if (file.exists("reports/eisenhower_report.html")) {
         # Read the report HTML

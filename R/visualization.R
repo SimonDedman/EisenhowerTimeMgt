@@ -78,7 +78,15 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
   # Ensure all data frames have consistent columns before combining
   for (i in seq_along(combined_data)) {
     if (!"list_name" %in% colnames(combined_data[[i]])) {
-      combined_data[[i]]$list_name <- NA
+      # Only add column if data frame has rows
+      if (nrow(combined_data[[i]]) > 0) {
+        combined_data[[i]]$list_name <- NA
+      } else {
+        # Create empty data frame with proper structure
+        empty_cols <- colnames(combined_data[[i]])
+        combined_data[[i]] <- data.frame(matrix(ncol = length(empty_cols) + 1, nrow = 0))
+        colnames(combined_data[[i]]) <- c(empty_cols, "list_name")
+      }
     }
   }
   
@@ -228,8 +236,9 @@ create_eisenhower_plot <- function(data,
                          mid = "#ffffbf", 
                          high = "#1a9850",
                          midpoint = 5,
-                         breaks = c(0, 2.5, 5, 7.5, 10),
-                         labels = c("0", "2.5", "5", "7.5", "10")) +
+                         limits = c(0, 10),
+                         breaks = scales::pretty_breaks(n = 5),
+                         labels = function(x) format(x, nsmall = 1)) +
     
     scale_shape_manual(name = "Category",
                       values = c("Work" = 15,  # Square for Work
