@@ -61,8 +61,8 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         project_context = board_name,
         # Preserve category if it exists
         category = ifelse("category" %in% colnames(trello_data), category, NA),
-        # Include list_name for color coding
-        list_name = ifelse("list_name" %in% colnames(trello_data), list_name, NA)
+        # Include list_name for color coding (pass through from original data)
+        list_name = list_name
       ) %>%
       select(source, task_title, urgency_final, importance_final, enjoyment_final, 
              duration_final, due_date_final, status, project_context, description, category, list_name)
