@@ -58,6 +58,38 @@ get_trello_boards_fixed <- function() {
   }
 }
 
+#' Get lists from a specific Trello board
+get_trello_lists <- function(board_id, api_key, token) {
+  url <- paste0("https://api.trello.com/1/boards/", board_id, "/lists")
+  
+  response <- httr::GET(
+    url,
+    query = list(
+      key = api_key,
+      token = token,
+      fields = "id,name,closed,pos",
+      limit = 100
+    )
+  )
+  
+  if (httr::status_code(response) == 200) {
+    content <- httr::content(response, as = "text", encoding = "UTF-8")
+    lists_data <- jsonlite::fromJSON(content)
+    
+    if (length(lists_data) > 0) {
+      return(data.frame(
+        list_id = lists_data$id,
+        list_name = lists_data$name,
+        closed = lists_data$closed %||% FALSE,
+        position = lists_data$pos %||% 0,
+        stringsAsFactors = FALSE
+      ))
+    }
+  }
+  
+  return(data.frame())
+}
+
 #' Get cards from specific Trello boards
 get_trello_cards_fixed <- function(board_names = NULL, include_closed = FALSE) {
   
@@ -84,14 +116,24 @@ get_trello_cards_fixed <- function(board_names = NULL, include_closed = FALSE) {
   }
   
   all_cards <- list()
+  all_lists <- list()
   
-  # Get cards from each board
+  # Get cards and lists from each board
   for (i in 1:nrow(boards)) {
     board_id <- boards$board_id[i]
     board_name <- boards$board_name[i]
     
     message("📝 Fetching cards from: ", board_name)
     
+    # Get lists for this board
+    board_lists <- get_trello_lists(board_id, api_key, token)
+    if (nrow(board_lists) > 0) {
+      board_lists$board_id <- board_id
+      board_lists$board_name <- board_name
+      all_lists[[i]] <- board_lists
+    }
+    
+    # Get cards for this board
     url <- paste0("https://api.trello.com/1/boards/", board_id, "/cards")
     
     response <- httr::GET(
@@ -146,8 +188,17 @@ get_trello_cards_fixed <- function(board_names = NULL, include_closed = FALSE) {
     return(data.frame())
   }
   
-  # Combine all cards
+  # Combine all cards and lists
   combined_cards <- do.call(rbind, all_cards[!sapply(all_cards, is.null)])
+  combined_lists <- do.call(rbind, all_lists[!sapply(all_lists, is.null)])
+  
+  # Join cards with list names
+  if (nrow(combined_lists) > 0) {
+    combined_cards <- combined_cards %>%
+      left_join(combined_lists %>% select(list_id, list_name), by = "list_id")
+  } else {
+    combined_cards$list_name <- NA
+  }
   
   # Convert dates
   combined_cards$due_date <- lubridate::ymd_hms(combined_cards$due_date, quiet = TRUE)

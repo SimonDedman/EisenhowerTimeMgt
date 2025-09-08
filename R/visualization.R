@@ -40,7 +40,8 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         category = ifelse("category" %in% colnames(calendar_data), category, NA)
       ) %>%
       select(source, task_title, urgency_final, importance_final, enjoyment_final, 
-             duration_final, due_date_final, status, project_context, description, category)
+             duration_final, due_date_final, status, project_context, description, category) %>%
+      mutate(list_name = NA)  # Calendar data doesn't have lists
     
     combined_data[["calendar"]] <- cal_processed
   }
@@ -57,13 +58,15 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         enjoyment_final = ifelse(!is.na(enjoyment), enjoyment, 5), # Default to neutral enjoyment
         duration_final = ifelse(!is.na(duration_tagged), duration_tagged, 2), # Default 2 hours
         due_date_final = due_date,
-        status = ifelse("list_name" %in% colnames(trello_data) && !is.na(list_name), list_name, "Open"),
+        status = ifelse("list_name" %in% colnames(trello_data) & !is.na(list_name), list_name, "Open"),
         project_context = board_name,
         # Preserve category if it exists
-        category = ifelse("category" %in% colnames(trello_data), category, NA)
+        category = ifelse("category" %in% colnames(trello_data), category, NA),
+        # Include list_name for color coding
+        list_name = ifelse("list_name" %in% colnames(trello_data), list_name, NA)
       ) %>%
       select(source, task_title, urgency_final, importance_final, enjoyment_final, 
-             duration_final, due_date_final, status, project_context, description, category)
+             duration_final, due_date_final, status, project_context, description, category, list_name)
     
     combined_data[["trello"]] <- trello_processed
   }
@@ -179,15 +182,26 @@ create_eisenhower_plot <- function(data,
     geom_vline(xintercept = 5, linetype = "dashed", color = "gray50", linewidth = 0.5) +
     geom_hline(yintercept = 5, linetype = "dashed", color = "gray50", linewidth = 0.5) +
     
-    # Add points - sized by duration, colored by enjoyment, shaped by data category
-    geom_point(aes(size = duration_final, 
-                   color = enjoyment_final,
-                   shape = ifelse("data_category" %in% colnames(data), 
-                                 data_category, 
-                                 ifelse("category" %in% colnames(data), category, source))),
-               alpha = alpha_level,
-               stroke = 0.5,
-               position = position_jitter(width = 0.15, height = 0.15, seed = 42)) +
+    # Add points - sized by duration, colored by enjoyment or list name, shaped by data category  
+    {if("list_name" %in% colnames(data) && any(!is.na(data$list_name))) {
+      geom_point(aes(size = duration_final, 
+                     color = list_name,
+                     shape = ifelse("data_category" %in% colnames(data), 
+                                   data_category, 
+                                   ifelse("category" %in% colnames(data), category, source))),
+                 alpha = alpha_level,
+                 stroke = 0.5,
+                 position = position_jitter(width = 0.15, height = 0.15, seed = 42))
+    } else {
+      geom_point(aes(size = duration_final, 
+                     color = enjoyment_final,
+                     shape = ifelse("data_category" %in% colnames(data), 
+                                   data_category, 
+                                   ifelse("category" %in% colnames(data), category, source))),
+                 alpha = alpha_level,
+                 stroke = 0.5,
+                 position = position_jitter(width = 0.15, height = 0.15, seed = 42))
+    }} +
     
     # Add text labels for tasks with smart positioning to avoid overlap
     geom_text_repel(aes(label = ifelse(nchar(task_title) > 30, 
@@ -211,13 +225,34 @@ create_eisenhower_plot <- function(data,
                          breaks = c(1, 3, 6, 12, 24),
                          labels = c("1h", "3h", "6h", "12h", "24h+")) +
     
-    scale_color_gradient2(name = "Enjoyment\nLevel", 
-                         low = "#d73027", 
-                         mid = "#ffffbf", 
-                         high = "#1a9850",
-                         midpoint = 5,
-                         breaks = c(0, 2.5, 5, 7.5, 10),
-                         labels = c("0", "2.5", "5", "7.5", "10")) +
+    # Use different color scales depending on whether list names are available
+    {if("list_name" %in% colnames(data) && any(!is.na(data$list_name))) {
+      # Custom colors for list names
+      scale_color_manual(name = "List", 
+                         values = c(
+                           "Garden" = "#2e7d32",      # dark green
+                           "garden" = "#2e7d32",      # dark green (lowercase)
+                           "Computer" = "#1565c0",    # dark blue
+                           "computer" = "#1565c0",    # dark blue (lowercase)
+                           "House" = "#6a1b9a",       # dark purple
+                           "house" = "#6a1b9a",       # dark purple (lowercase)
+                           "House Large/DIY" = "#c62828",  # dark red
+                           "house large/diy" = "#c62828", # dark red (lowercase)
+                           "House large/DIY" = "#c62828", # dark red (alt case)
+                           "Car & Bike" = "#388e3c",  # less dark green
+                           "car & bike" = "#388e3c",  # less dark green (lowercase)
+                           "Car and Bike" = "#388e3c" # less dark green (alt)
+                         ),
+                         na.value = "#757575") # gray for NA values
+    } else {
+      scale_color_gradient2(name = "Enjoyment\nLevel", 
+                           low = "#d73027", 
+                           mid = "#ffffbf", 
+                           high = "#1a9850",
+                           midpoint = 5,
+                           breaks = c(0, 2.5, 5, 7.5, 10),
+                           labels = c("0", "2.5", "5", "7.5", "10"))
+    }} +
     
     scale_shape_manual(name = "Category",
                       values = c("Work" = 15,  # Square for Work

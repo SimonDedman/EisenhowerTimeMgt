@@ -7,8 +7,10 @@ output:
   html_document:
     theme: flatly
     toc: true
-    toc_float: true
-    code_folding: hide
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    code_folding: none
     fig_width: 12
     fig_height: 8
     self_contained: false
@@ -351,6 +353,62 @@ if (nrow(work_task_data) > 0) {
 }
 ```
 
+## Work Tasks by List
+
+```{r work-by-list, results='asis'}
+if (nrow(work_task_data) > 0 && "list_name" %in% colnames(work_task_data)) {
+  
+  # Get unique lists in work data
+  work_lists <- work_task_data %>%
+    filter(!is.na(list_name)) %>%
+    group_by(list_name) %>%
+    summarise(count = n(), .groups = "drop") %>%
+    arrange(desc(count))
+  
+  if (nrow(work_lists) > 0) {
+    for (i in 1:nrow(work_lists)) {
+      list_name <- work_lists$list_name[i]
+      list_data <- work_task_data %>% filter(list_name == !!list_name)
+      
+      cat("### ", list_name, "\n\n")
+      
+      if (nrow(list_data) > 0) {
+        # List summary
+        list_summary <- list_data %>%
+          summarise(
+            Tasks = n(),
+            `Avg Urgency` = round(mean(urgency_final, na.rm = TRUE), 1),
+            `Avg Importance` = round(mean(importance_final, na.rm = TRUE), 1),
+            `Total Hours` = round(sum(duration_final, na.rm = TRUE), 1),
+            `Avg Enjoyment` = round(mean(enjoyment_final, na.rm = TRUE), 1)
+          )
+        
+        cat("**Summary:** ", list_summary$Tasks, " tasks, ", 
+            list_summary$`Total Hours`, " hours total\n\n")
+        
+        # Top tasks in this list
+        top_tasks <- list_data %>%
+          arrange(desc(urgency_final), desc(importance_final)) %>%
+          select(task_title, urgency_final, importance_final, quadrant) %>%
+          head(5)
+        
+        if (nrow(top_tasks) > 0) {
+          cat("**Top Priority Tasks:**\n\n")
+          for (j in 1:nrow(top_tasks)) {
+            cat("- ", top_tasks$task_title[j], " (", top_tasks$quadrant[j], ")\n")
+          }
+          cat("\n")
+        }
+      }
+    }
+  } else {
+    cat("No list information available for work tasks.\n")
+  }
+} else {
+  cat("No work list data available.\n")
+}
+```
+
 ## Work Recommendations
 
 ```{r work-recommendations}
@@ -458,6 +516,62 @@ if (nrow(home_task_data) > 0) {
     formatRound(columns = c("Urgency", "Importance", "Enjoyment", "Duration"), digits = 1)
 } else {
   cat("No home tasks available to display")
+}
+```
+
+## Home Tasks by List
+
+```{r home-by-list, results='asis'}
+if (nrow(home_task_data) > 0 && "list_name" %in% colnames(home_task_data)) {
+  
+  # Get unique lists in home data
+  home_lists <- home_task_data %>%
+    filter(!is.na(list_name)) %>%
+    group_by(list_name) %>%
+    summarise(count = n(), .groups = "drop") %>%
+    arrange(desc(count))
+  
+  if (nrow(home_lists) > 0) {
+    for (i in 1:nrow(home_lists)) {
+      list_name <- home_lists$list_name[i]
+      list_data <- home_task_data %>% filter(list_name == !!list_name)
+      
+      cat("### ", list_name, "\n\n")
+      
+      if (nrow(list_data) > 0) {
+        # List summary
+        list_summary <- list_data %>%
+          summarise(
+            Tasks = n(),
+            `Avg Urgency` = round(mean(urgency_final, na.rm = TRUE), 1),
+            `Avg Importance` = round(mean(importance_final, na.rm = TRUE), 1),
+            `Total Hours` = round(sum(duration_final, na.rm = TRUE), 1),
+            `Avg Enjoyment` = round(mean(enjoyment_final, na.rm = TRUE), 1)
+          )
+        
+        cat("**Summary:** ", list_summary$Tasks, " tasks, ", 
+            list_summary$`Total Hours`, " hours total\n\n")
+        
+        # Top tasks in this list
+        top_tasks <- list_data %>%
+          arrange(desc(urgency_final), desc(importance_final)) %>%
+          select(task_title, urgency_final, importance_final, quadrant) %>%
+          head(5)
+        
+        if (nrow(top_tasks) > 0) {
+          cat("**Top Priority Tasks:**\n\n")
+          for (j in 1:nrow(top_tasks)) {
+            cat("- ", top_tasks$task_title[j], " (", top_tasks$quadrant[j], ")\n")
+          }
+          cat("\n")
+        }
+      }
+    }
+  } else {
+    cat("No list information available for home tasks.\n")
+  }
+} else {
+  cat("No home list data available.\n")
 }
 ```
 
