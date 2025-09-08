@@ -200,6 +200,10 @@ get_trello_cards_fixed <- function(board_names = NULL, include_closed = FALSE) {
     combined_cards$list_name <- NA
   }
   
+  # Filter out "Done" lists after joining list names
+  combined_cards <- combined_cards %>%
+    filter(is.na(list_name) | list_name != "Done")
+  
   # Convert dates
   combined_cards$due_date <- lubridate::ymd_hms(combined_cards$due_date, quiet = TRUE)
   combined_cards$date_last_activity <- lubridate::ymd_hms(combined_cards$date_last_activity, quiet = TRUE)
