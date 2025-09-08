@@ -499,6 +499,10 @@ if (nrow(home_task_data) > 0 && "list_name" %in% colnames(home_task_data)) {
         
         # Create individual Eisenhower matrix for this list
         if (nrow(list_data) >= 2) {  # Only create plot if enough data points
+          
+          # Source the visualization function to ensure it's available
+          source("../R/visualization.R")
+          
           list_plot <- create_eisenhower_plot(
             list_data, 
             title = paste("Home -", list_name, "Eisenhower Matrix"),

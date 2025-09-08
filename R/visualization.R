@@ -40,8 +40,7 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         category = ifelse("category" %in% colnames(calendar_data), category, NA)
       ) %>%
       select(source, task_title, urgency_final, importance_final, enjoyment_final, 
-             duration_final, due_date_final, status, project_context, description, category) %>%
-      mutate(list_name = NA)  # Calendar data doesn't have lists
+             duration_final, due_date_final, status, project_context, description, category)
     
     combined_data[["calendar"]] <- cal_processed
   }
@@ -74,6 +73,13 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
   if (length(combined_data) == 0) {
     message("No data to combine")
     return(data.frame())
+  }
+  
+  # Ensure all data frames have consistent columns before combining
+  for (i in seq_along(combined_data)) {
+    if (!"list_name" %in% colnames(combined_data[[i]])) {
+      combined_data[[i]]$list_name <- NA
+    }
   }
   
   # Combine all sources
