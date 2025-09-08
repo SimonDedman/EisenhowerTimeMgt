@@ -57,7 +57,7 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         enjoyment_final = ifelse(!is.na(enjoyment), enjoyment, 5), # Default to neutral enjoyment
         duration_final = ifelse(!is.na(duration_tagged), duration_tagged, 2), # Default 2 hours
         due_date_final = due_date,
-        status = ifelse("list_name" %in% colnames(trello_data) & !is.na(list_name), list_name, "Open"),
+        status = "Open",  # Will be updated with list name after joining
         project_context = board_name,
         # Preserve category if it exists
         category = ifelse("category" %in% colnames(trello_data), category, NA),
@@ -113,7 +113,10 @@ combine_task_data <- function(calendar_data = NULL, trello_data = NULL) {
         enjoyment_final >= 7 ~ "High Enjoyment (7-10)",
         enjoyment_final >= 4 ~ "Medium Enjoyment (4-6)",
         TRUE ~ "Low Enjoyment (0-3)"
-      )
+      ),
+      
+      # Update status with list name for Trello data
+      status = ifelse(source == "Trello" & !is.na(list_name), list_name, status)
     )
   
   return(result)
